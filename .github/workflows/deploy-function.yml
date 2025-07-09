@@ -1,0 +1,78 @@
+name: Deploy Doctor Function to AWS Lambda
+
+on:
+  workflow_dispatch:
+
+env:
+  AWS_REGION: ap-southeast-2
+  JAVA_VERSION: 17
+  PROJECT_DIR: doctorService
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+
+      - name: Set up Gradle
+        uses: gradle/gradle-build-action@v2
+
+      - name: Build with Gradle
+        run: |
+          cd ${{ env.PROJECT_DIR }}
+          gradle buildZip
+
+      - name: Debug - List build directory contents
+        run: |
+          cd ${{ env.PROJECT_DIR }}
+          echo "Build directory contents:"
+          ls -R build
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Deploy to AWS Lambda
+        run: |
+          cd ${{ env.PROJECT_DIR }}
+          FUNCTION_NAME=doctor-function
+          HANDLER="com.ELEC5620.doctorService.config.AwsLambdaHandler::handleRequest"
+          ZIP_FILE=build/distributions/doctorService-0.0.1-SNAPSHOT.zip
+
+          echo "Using ZIP file: $ZIP_FILE"
+
+          if [ ! -f "$ZIP_FILE" ]; then
+            echo "ZIP file not found"
+            exit 1
+          fi
+
+          if ! aws lambda get-function --function-name $FUNCTION_NAME &>/dev/null; then
+            echo "Creating new function: $FUNCTION_NAME"
+            aws lambda create-function \
+              --function-name $FUNCTION_NAME \
+              --runtime java17 \
+              --role ${{ secrets.LAMBDA_EXECUTION_ROLE_ARN }} \
+              --handler $HANDLER \
+              --zip-file fileb://$ZIP_FILE \
+              --timeout 30 \
+              --memory-size 512
+          else
+            echo "Updating existing function: $FUNCTION_NAME"
+            aws lambda update-function-code \
+              --function-name $FUNCTION_NAME \
+              --zip-file fileb://$ZIP_FILE
+          fi
+
+          echo "Waiting for Lambda function update to complete..."
+          aws lambda wait function-updated --function-name $FUNCTION_NAME
+          echo "Lambda function update completed successfully."

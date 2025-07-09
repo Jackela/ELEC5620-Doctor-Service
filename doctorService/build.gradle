@@ -1,0 +1,85 @@
+plugins {
+    id 'org.springframework.boot' version '3.3.4'
+    id 'io.spring.dependency-management' version '1.1.6'
+    id 'java'
+}
+
+group = 'com.ELEC5620'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '17'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // Spring Boot starter for web and Lambda integration
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    
+    // AWS SDK BOM to manage all AWS SDK dependencies
+    implementation platform('software.amazon.awssdk:bom:2.25.6')
+    
+    // AWS Lambda and API Gateway dependencies
+    implementation 'software.amazon.awssdk:lambda'
+    implementation 'software.amazon.awssdk:apigateway'
+    
+    // AWS Lambda core and events
+    implementation 'com.amazonaws:aws-lambda-java-core:1.2.3'
+    implementation 'com.amazonaws:aws-lambda-java-events:3.11.4'
+
+
+    implementation group: 'org.springdoc', name: 'springdoc-openapi-starter-webmvc-ui', version: '2.6.0'
+    implementation group: 'org.springdoc', name: 'springdoc-openapi-ui', version: '1.8.0'
+
+
+    // AWS services: S3, DynamoDB, Secrets Manager
+    implementation 'com.amazonaws:aws-java-sdk-s3:1.12.688'
+    implementation 'com.amazonaws:aws-java-sdk-dynamodb:1.12.688'
+    implementation 'com.amazonaws:aws-java-sdk-secretsmanager:1.12.688'
+    implementation 'software.amazon.awssdk:dynamodb:2.25.6'
+    
+    // Langchain4J integration
+    implementation 'dev.langchain4j:langchain4j-open-ai:0.35.0'
+    implementation 'dev.langchain4j:langchain4j:0.35.0'
+    
+    // Lombok for reducing boilerplate code
+    compileOnly 'org.projectlombok:lombok:1.18.32'
+    annotationProcessor 'org.projectlombok:lombok:1.18.32'
+    
+    // Testing dependencies
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.mockito:mockito-inline:5.2.0'
+    testImplementation 'org.mockito:mockito-junit-jupiter:5.2.0'
+    testImplementation 'org.hamcrest:hamcrest:2.2'
+    
+    // AWS Serverless Java container for Spring Boot
+    implementation 'com.amazonaws.serverless:aws-serverless-java-container-springboot3:2.0.0-M2'
+    
+    // Spring Boot validation support
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+// Task to create a ZIP file for Lambda deployment
+task buildZip(type: Zip) {
+    from compileJava
+    from processResources
+    into('lib') {
+        from configurations.runtimeClasspath
+    }
+}
+
+build.dependsOn buildZip
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
+// Ensure the correct Java toolchain is used
+tasks.withType(JavaCompile) {
+    options.compilerArgs += ['--release', '17']
+}

@@ -1,57 +1,38 @@
-# Doctor Service (ELEC5620-Microservices)
+# Doctor Service (ELEC5620 Microservices)
 
-Part of a medical application built on a microservices architecture.
+This course service accepts a question at `POST /doctor`, forwards it through a LangChain4j service, and returns model text. The model can invoke HTTP tools for translation, health advice, patient summaries and regional reports. The code is in `doctorService/`; the repository root is not a Gradle project.
 
-## 📖 Project Goal & Motivation
+## Build and verify
 
-This project is a key component of a larger medical application, designed and built based on a microservices architecture. The goal was to create a robust and scalable backend service specifically for doctor-related functionalities within the system.
+Use JDK 17 (the CI runtime) and the checked-in Gradle wrapper. No AWS credentials or model key are required for these checks:
 
-## 🏗️ Architecture & Technical Highlights
-
-*   **Microservices Architecture**: Implemented as a distinct microservice, adhering to the principles of loose coupling and high cohesion.
-*   **Database-per-Service Pattern**: Utilizes a dedicated database (likely **DynamoDB** as per the overall project description) for its domain, ensuring data independence and flexibility.
-*   **API-Driven**: Designed to be orchestrated by a frontend application via an **API Gateway**, providing a clear interface for interaction.
-*   **Java & Spring Boot**: Developed using **Java** and the **Spring Boot** framework, leveraging its capabilities for rapid development and robust enterprise-grade applications.
-*   **AI Integration**: Incorporates **Langchain4j** for integrating AI capabilities, enhancing the service with intelligent features.
-
-## 👤 My Role & Contributions
-
-As a key backend developer and Agile Project Manager, I utilized Jira to facilitate team collaboration. My technical contributions included developing significant portions of both the Patient-Service and Doctor-Service using Java and Spring Boot, and integrating AI capabilities with Langchain4j.
-
-## 🛠️ Tech Stack
-
-![Java](https://img.shields.io/badge/java-%23ED8B00.svg?style=for-the-badge&logo=openjdk&logoColor=white)
-![Spring Boot](https://img.shields.io/badge/Spring%20Boot-6DB33F?style=for-the-badge&logo=spring-boot&logoColor=white)
-![AWS](https://img.shields.io/badge/AWS-%23FF9900.svg?style=for-the-badge&logo=amazon-aws&logoColor=white)
-![Langchain4j](https://img.shields.io/badge/Langchain4j-007BFF?style=for-the-badge)
-
-## 🚀 Installation & Usage
-
-### 1. Prerequisites
-
-*   Java Development Kit (JDK) 17 or higher.
-*   Maven or Gradle (depending on project build system).
-*   AWS CLI configured (if interacting with AWS services directly).
-
-### 2. Build the Project
-
-Navigate to the `doctorService` subdirectory (or the root of the service if it's the top-level) and build the project:
-
-```bash
-# If using Gradle
-./gradlew build
+```sh
+cd doctorService
+./gradlew check buildZip
 ```
 
-### 3. Run the Service
+Controller tests use standalone MockMvc; service tests control the model boundary; tool tests intercept HTTP in process. They check successful replies, malformed requests, model failures and JSON escaping. The Lambda ZIP is `build/distributions/doctorService-0.0.1-SNAPSHOT.zip`, and packaging requires the checks to pass. Push and pull request CI run the same command.
 
-```bash
-# If using Gradle
-./gradlew bootRun
+## Runtime configuration
+
+`./gradlew bootRun` starts the service on port 8080. Unlike the offline checks, application startup reads `OPENAI_API_KEY` from the AWS Secrets Manager secret declared in `SecretsManagerUtil`, in `ap-southeast-2`. A working runtime therefore needs authorized AWS access and that secret. Ordinary requests can call a paid model and the external API Gateway endpoints in `ApiTools`; the test suite does neither.
+
+```http
+POST /doctor
+Content-Type: application/json
+
+{"question":"Your question"}
 ```
 
-### 4. API Endpoints
+This repository contains AWS SDK dependencies and a Lambda handler. It has no implemented doctor database repository or demonstrated DynamoDB persistence. The runtime wiring and tests establish code behavior; they do not establish a live deployment or clinical validation. Course authorship and license are retained below; this repository alone does not substantiate project management roles or contributions to other services.
 
-Once running, the service will expose RESTful API endpoints. Refer to the project's API documentation (if available) for details on how to interact with it.
+## Deployment
+
+The manual **Deploy Doctor Function to AWS Lambda** workflow first verifies and packages the service. Deployment runs only when its explicit `deploy` input is enabled, using the configured AWS credentials and execution role. Push and pull request checks do not deploy. Consult the workflow and `AwsLambdaHandler` for the current function and handler settings.
+
+## Maintenance
+
+Read [AGENTS.md](AGENTS.md) for the source and validation entry points. Keep external services controlled at test boundaries and report local checks separately from AWS runtime evidence.
 
 ## 📄 License
 

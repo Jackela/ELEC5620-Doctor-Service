@@ -72,6 +72,7 @@ task buildZip(type: Zip) {
     }
 }
 
+buildZip.dependsOn check
 build.dependsOn buildZip
 
 java {

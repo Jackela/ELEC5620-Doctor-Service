@@ -1,6 +1,7 @@
 package com.ELEC5620.doctorService.tools;
 
 import dev.langchain4j.agent.tool.Tool;
+import java.util.Map;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.http.ResponseEntity;
@@ -21,12 +22,12 @@ public class ApiTools {
     public String callTranslateApi(String text, String sourceLanguage, String targetLanguage) {
         String url = "https://yhrj2rgi0c.execute-api.ap-southeast-2.amazonaws.com/prod/translate";
 
-        String requestBody = "{\"text\": \"" + text + "\", \"sourceLanguage\": \"" + sourceLanguage + "\", \"targetLanguage\": \"" + targetLanguage + "\"}";
+        Map<String, String> requestBody = Map.of("text", text, "sourceLanguage", sourceLanguage, "targetLanguage", targetLanguage);
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
-        HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
+        HttpEntity<Map<String, String>> entity = new HttpEntity<>(requestBody, headers);
 
         ResponseEntity<String> response = restTemplate.postForEntity(url, entity, String.class);
 
@@ -37,12 +38,12 @@ public class ApiTools {
     public String callHealthAdviceApi(String userInput) {
         String url = "https://yhrj2rgi0c.execute-api.ap-southeast-2.amazonaws.com/prod/health-advice";
 
-        String requestBody = "{\"userInput\": \"" + userInput + "\"}";
+        Map<String, String> requestBody = Map.of("userInput", userInput);
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
-        HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
+        HttpEntity<Map<String, String>> entity = new HttpEntity<>(requestBody, headers);
 
         ResponseEntity<String> response = restTemplate.postForEntity(url, entity, String.class);
 
